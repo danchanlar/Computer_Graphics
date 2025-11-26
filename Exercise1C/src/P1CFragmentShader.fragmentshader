@@ -1,0 +1,39 @@
+#version 330 core
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 UV;
+
+out vec4 color;
+
+uniform sampler2D texSampler;
+uniform vec4  uniColor;
+uniform int   useTexture;
+
+uniform vec3  lightPos;   // (8,0,0) από C++
+uniform vec3  viewPos;    // θέση κάμερας από C++
+
+void main()
+{
+    // Βασικό χρώμα: από υφή ή από σταθερό χρώμα
+    vec3 baseColor = (useTexture == 1)
+        ? texture(texSampler, UV).rgb
+        : uniColor.rgb;
+
+    vec3 N = normalize(Normal);
+    vec3 L = normalize(lightPos - FragPos);
+    vec3 V = normalize(viewPos - FragPos);
+    vec3 R = reflect(-L, N);
+
+    float diff = max(dot(N, L), 0.0);
+    float spec = 0.0;
+    if (diff > 0.0)
+        spec = pow(max(dot(R, V), 0.0), 32.0);  // shininess 32
+
+    vec3 ambient  = 0.35 * baseColor;
+    vec3 diffuse  = diff * baseColor;
+    vec3 specular = spec * vec3(1.0);   // λευκή λάμψη
+
+    vec3 finalColor = ambient + diffuse + specular;
+    color = vec4(finalColor, 1.0);
+}
